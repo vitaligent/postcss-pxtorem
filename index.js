@@ -29,7 +29,7 @@ module.exports = postcss.plugin('postcss-pxtorem', function (options) {
 
     var opts = objectAssign({}, defaults, options);
     var pxReplace = createPxReplace(opts.rootValue, opts.unitPrecision, opts.minPixelValue);
-    var remReplace = createRemReplace(1, opts.unitPrecision, 0);
+    var remReplace = createPxReplace(1, opts.unitPrecision, 0);
 
     return function (css) {
 
