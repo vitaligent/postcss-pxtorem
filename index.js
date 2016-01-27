@@ -2,6 +2,7 @@
 
 var postcss = require('postcss');
 var pxRegex = require('./lib/pixel-unit-regex');
+var remRegex = require('./lib/rem-unit-regex');
 var objectAssign = require('object-assign');
 
 var defaults = {
@@ -28,18 +29,20 @@ module.exports = postcss.plugin('postcss-pxtorem', function (options) {
 
     var opts = objectAssign({}, defaults, options);
     var pxReplace = createPxReplace(opts.rootValue, opts.unitPrecision, opts.minPixelValue);
+    var remReplace = createRemReplace(1, opts.unitPrecision, 0);
 
     return function (css) {
 
         css.walkDecls(function (decl, i) {
             // This should be the fastest test and will remove most declarations
-            if (decl.value.indexOf('px') === -1) return;
+            if (decl.value.indexOf('px') === -1 && decl.value.indexOf('rem') === -1) return;
 
             if (opts.propWhiteList.length && opts.propWhiteList.indexOf(decl.prop) === -1) return;
 
             if (blacklistedSelector(opts.selectorBlackList, decl.parent.selector)) return;
 
             var value = decl.value.replace(pxRegex, pxReplace);
+            var value = decl.value.replace(remRegex, remReplace);
 
             // if rem unit already exists, do not add or replace
             if (declarationExists(decl.parent, decl.prop, value)) return;
@@ -53,8 +56,9 @@ module.exports = postcss.plugin('postcss-pxtorem', function (options) {
 
         if (opts.mediaQuery) {
             css.walkAtRules('media', function (rule) {
-                if (rule.params.indexOf('px') === -1) return;
+                if (rule.params.indexOf('px') === -1 && rule.params.indexOf('rem') === -1) return;
                 rule.params = rule.params.replace(pxRegex, pxReplace);
+                rule.params = rule.params.replace(remRegex, remReplace);
             });
         }
 
@@ -76,13 +80,13 @@ function createPxReplace (rootValue, unitPrecision, minPixelValue) {
         if (!$1) return m;
         var pixels = parseFloat($1);
         if (pixels < minPixelValue) return m;
-        return toFixed((pixels / rootValue), unitPrecision) + 'rem';
+        return toFixed((pixels / rootValue), unitPrecision) + 'em';
     };
 }
 
 function toFixed(number, precision) {
     var multiplier = Math.pow(10, precision + 1),
-    wholeNumber = Math.floor(number * multiplier);
+        wholeNumber = Math.floor(number * multiplier);
     return Math.round(wholeNumber / 10) * 10 / multiplier;
 }
 
