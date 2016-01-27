@@ -9,7 +9,8 @@ var defaults = {
     rootValue: 16,
     unitPrecision: 5,
     selectorBlackList: [],
-    propWhiteList: ['font', 'font-size', 'line-height', 'letter-spacing'],
+    propWhiteList: [],
+    //propWhiteList: ['font', 'font-size', 'line-height', 'letter-spacing'],
     replace: true,
     mediaQuery: false,
     minPixelValue: 0
@@ -41,17 +42,23 @@ module.exports = postcss.plugin('postcss-pxtorem', function (options) {
 
             if (blacklistedSelector(opts.selectorBlackList, decl.parent.selector)) return;
 
-            var value = decl.value.replace(pxRegex, pxReplace);
-            var value = decl.value.replace(remRegex, remReplace);
-
+            if (decl.value.indexOf('rem') === -1) {
+                var value = decl.value.replace(pxRegex, pxReplace);
+                //console.log(decl.value + ' ' + 'pixels!');
+            }
+            else {
+                var value = decl.value.replace(remRegex, remReplace);
+                //console.log(decl.value + ' ' + 'rems!');
+            }
             // if rem unit already exists, do not add or replace
-            if (declarationExists(decl.parent, decl.prop, value)) return;
+            //if (declarationExists(decl.parent, decl.prop, value)) return;
 
             if (opts.replace) {
                 decl.value = value;
             } else {
                 decl.parent.insertAfter(i, decl.clone({ value: value }));
             }
+            //console.log(decl.value + ' ' + value);
         });
 
         if (opts.mediaQuery) {
